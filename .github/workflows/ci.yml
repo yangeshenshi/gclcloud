@@ -1,0 +1,94 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        deno-version: [1.38.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: ${{ matrix.deno-version }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/deno
+        key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+        restore-keys: |
+          ${{ runner.os }}-deno-
+    
+    - name: Run linter
+      run: deno lint
+    
+    - name: Run formatter
+      run: deno fmt --check
+    
+    - name: Run tests
+      run: deno test --allow-all
+    
+    - name: Generate coverage
+      run: deno test --allow-all --coverage=coverage
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: 1.38.x
+    
+    - name: Run security audit
+      run: deno audit
+
+  build:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: 1.38.x
+    
+    - name: Build project
+      run: deno cache main.ts
+    
+    - name: Create release artifact
+      run: |
+        mkdir -p dist
+        cp -r *.ts deno.json dist/ 2>/dev/null || true
+        cp -r src/ dist/ 2>/dev/null || true
+        cp -r static/ dist/ 2>/dev/null || true
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-files
+        path: dist/

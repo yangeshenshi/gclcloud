@@ -1,0 +1,39 @@
+name: Deploy to Deno Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: 1.38.x
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/deno
+        key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+        restore-keys: |
+          ${{ runner.os }}-deno-
+    
+    - name: Deploy to Deno Deploy
+      uses: denoland/deployctl@v1
+      with:
+        project: gcli2api-web
+        entrypoint: main.ts
+        root: .
+        import-map: import_map.json
