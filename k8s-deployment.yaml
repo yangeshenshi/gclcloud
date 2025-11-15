@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gcli2api
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gcli2api-config
+  namespace: gcli2api
+data:
+  PORT: "7861"
+  HOST: "0.0.0.0"
+  PASSWORD: "pwd"
+  LOG_LEVEL: "INFO"
+  CALLS_PER_ROTATION: "10"
+  RETRY_429_ENABLED: "true"
+  RETRY_429_MAX_RETRIES: "3"
+  RETRY_429_INTERVAL: "1.0"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gcli2api-secrets
+  namespace: gcli2api
+type: Opaque
+data:
+  # Base64 编码的密码，建议使用 kubectl create secret 命令创建
+  API_PASSWORD: ""
+  PANEL_PASSWORD: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gcli2api
+  namespace: gcli2api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gcli2api
+  template:
+    metadata:
+      labels:
+        app: gcli2api
+    spec:
+      containers:
+      - name: gcli2api
+        image: ghcr.io/su-kaka/gcli2api:latest
+        ports:
+        - containerPort: 7861
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: PORT
+        - name: HOST
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: HOST
+        - name: PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: PASSWORD
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: LOG_LEVEL
+        - name: CALLS_PER_ROTATION
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: CALLS_PER_ROTATION
+        - name: RETRY_429_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: gcli2api-config
+              key: RETRY_429_ENABLED
+        - name: REDIS_URI
+          value: "redis://redis-service:6379"
+        volumeMounts:
+        - name: creds-volume
+          mountPath: /app/creds
+        livenessProbe:
+          httpGet:
+            path: /v1/models
+            port: 7861
+            httpHeaders:
+            - name: Authorization
+              value: "Bearer pwd"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /v1/models
+            port: 7861
+            httpHeaders:
+            - name: Authorization
+              value: "Bearer pwd"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: creds-volume
+        persistentVolumeClaim:
+          claimName: gcli2api-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gcli2api-service
+  namespace: gcli2api
+spec:
+  selector:
+    app: gcli2api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 7861
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gcli2api-pvc
+  namespace: gcli2api
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Redis 部署 (可选)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: gcli2api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: gcli2api
+spec:
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: gcli2api
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

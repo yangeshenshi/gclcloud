@@ -1,0 +1,47 @@
+{
+  "name": "gcli2api-deno",
+  "version": "1.0.0",
+  "description": "Deno deployment configuration for gcli2api",
+  "deploy": {
+    "project": "gcli2api-web",
+    "entrypoint": "main.ts",
+    "importMap": "import_map.json",
+    "env": {
+      "PORT": "8000",
+      "HOST": "0.0.0.0",
+      "PASSWORD": "pwd",
+      "LOG_LEVEL": "INFO"
+    },
+    "regions": [
+      "hkg",
+      "sin",
+      "tyo",
+      "syd",
+      "fra",
+      "lhr",
+      "iad",
+      "sfo"
+    ],
+    "static": {
+      "dir": "static",
+      "cache": {
+        "maxAge": 3600,
+        "staleWhileRevalidate": 86400
+      }
+    },
+    "headers": {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "X-XSS-Protection": "1; mode=block",
+      "Referrer-Policy": "strict-origin-when-cross-origin"
+    }
+  },
+  "build": {
+    "command": "deno cache main.ts",
+    "output": "_fresh"
+  },
+  "scripts": {
+    "predeploy": "deno lint && deno fmt --check && deno test --allow-all",
+    "postdeploy": "echo 'Deployment completed successfully!'"
+  }
+}

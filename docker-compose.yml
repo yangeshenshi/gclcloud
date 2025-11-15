@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Redis 服务 (可选，用于分布式存储)
+  redis:
+    image: redis:7-alpine
+    container_name: gcli2api-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    networks:
+      - gcli2api-network
+
+  # MongoDB 服务 (可选，用于分布式存储)
+  mongodb:
+    image: mongo:7
+    container_name: gcli2api-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - gcli2api-network
+
+  # gcli2api 主服务
+  gcli2api:
+    image: ghcr.io/su-kaka/gcli2api:latest
+    container_name: gcli2api
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mongodb
+    environment:
+      # 基础配置 (与官方项目一致)
+      - PORT=7861
+      - HOST=0.0.0.0
+      
+      # 密码配置 - 使用官方默认值 pwd
+      # 警告: 生产环境请务必修改为强密码！
+      - PASSWORD=pwd
+      
+      # 可选: 分离密码配置 (生产环境推荐)
+      # - API_PASSWORD=your_api_password
+      # - PANEL_PASSWORD=your_panel_password
+      
+      # Redis 配置 (推荐用于生产环境)
+      - REDIS_URI=redis://redis:6379
+      - REDIS_DATABASE=0
+      
+      # MongoDB 配置 (备选方案)
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/admin
+      - MONGODB_DATABASE=gcli2api
+      
+      # 性能和稳定性配置 (官方默认值)
+      - CALLS_PER_ROTATION=10
+      - RETRY_429_ENABLED=true
+      - RETRY_429_MAX_RETRIES=3
+      - RETRY_429_INTERVAL=1.0
+      
+      # 日志配置
+      - LOG_LEVEL=INFO
+      - LOG_FILE=gcli2api.log
+      
+      # 自动化配置 (官方默认值)
+      - AUTO_BAN=true
+      - AUTO_LOAD_ENV_CREDS=false
+      
+      # 兼容性配置 (官方默认值)
+      - COMPATIBILITY_MODE=false
+      
+    ports:
+      - "7861:7861"
+    volumes:
+      - ./data/creds:/app/creds
+      - ./logs:/app/logs
+    networks:
+      - gcli2api-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import sys, urllib.request, os; port = os.environ.get('PORT', '7861'); req = urllib.request.Request(f'http://localhost:{port}/v1/models', headers={'Authorization': 'Bearer ' + os.environ.get('PASSWORD', 'pwd')}); sys.exit(0 if urllib.request.urlopen(req, timeout=5).getcode() == 200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis_data:
+  mongodb_data:
+
+networks:
+  gcli2api-network:
+    driver: bridge

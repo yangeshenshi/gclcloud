@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 测试 - gcli2api</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .code-block { background: #1a1a1a; border-radius: 8px; }
+        .response-area { min-height: 200px; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-gray-900">gcli2api</a>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">首页</a>
+                    <a href="api-test.html" class="text-blue-600 font-semibold">API 测试</a>
+                    <a href="cloud-deployment-guide.md" class="text-gray-700 hover:text-blue-600 transition-colors">文档</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="gradient-bg text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-bold mb-4">API 测试工具</h1>
+            <p class="text-xl">测试 gcli2api 的 API 功能和响应</p>
+        </div>
+    </section>
+
+    <!-- API Test Section -->
+    <section class="py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Request Configuration -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center">
+                        <i class="fas fa-paper-plane text-blue-600 mr-3"></i>
+                        请求配置
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">API 地址</label>
+                            <input type="text" id="apiUrl" value="http://localhost:7861/v1/chat/completions" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">认证密钥</label>
+                            <input type="password" id="apiKey" value="pwd" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">模型选择</label>
+                            <select id="model" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">消息内容</label>
+                            <textarea id="message" rows="4" placeholder="请输入您想要询问的问题..." 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">你好，请介绍一下你自己。</textarea>
+                        </div>
+                        
+                        <div class="flex space-x-4">
+                            <button onclick="testAPI()" 
+                                    class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                                <i class="fas fa-play mr-2"></i>发送请求
+                            </button>
+                            <button onclick="generateCode()" 
+                                    class="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors font-semibold">
+                                <i class="fas fa-code mr-2"></i>生成代码
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Response Display -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center">
+                        <i class="fas fa-reply text-green-600 mr-3"></i>
+                        响应结果
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">状态</label>
+                            <div id="status" class="px-4 py-2 bg-gray-100 rounded-lg text-gray-600">
+                                等待请求...
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">响应时间</label>
+                            <div id="responseTime" class="px-4 py-2 bg-gray-100 rounded-lg text-gray-600">
+                                0 ms
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">响应内容</label>
+                            <div id="response" class="code-block p-4 response-area overflow-auto">
+                                <pre class="text-green-400 text-sm">// 响应将在这里显示</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Generation -->
+            <div class="mt-12 bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-code text-purple-600 mr-3"></i>
+                    代码示例
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">cURL 命令</h3>
+                        <div class="code-block p-4">
+                            <pre id="curlCode" class="text-green-400 text-sm overflow-x-auto"># 点击"生成代码"按钮生成 cURL 命令</pre>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Python 代码</h3>
+                        <div class="code-block p-4">
+                            <pre id="pythonCode" class="text-green-400 text-sm overflow-x-auto"># 点击"生成代码"按钮生成 Python 代码</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-400">© 2024 gcli2api 项目. 开源 API 转换工具.</p>
+        </div>
+    </footer>
+
+    <script>
+        async function testAPI() {
+            const url = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('model').value;
+            const message = document.getElementById('message').value;
+            
+            const statusEl = document.getElementById('status');
+            const responseTimeEl = document.getElementById('responseTime');
+            const responseEl = document.getElementById('response');
+            
+            statusEl.textContent = '发送请求中...';
+            statusEl.className = 'px-4 py-2 bg-yellow-100 rounded-lg text-yellow-800';
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: message
+                            }
+                        ]
+                    })
+                });
+                
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                responseTimeEl.textContent = `${responseTime} ms`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusEl.textContent = `成功 (${response.status})`;
+                    statusEl.className = 'px-4 py-2 bg-green-100 rounded-lg text-green-800';
+                    responseEl.innerHTML = `<pre class="text-green-400 text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const error = await response.text();
+                    statusEl.textContent = `错误 (${response.status})`;
+                    statusEl.className = 'px-4 py-2 bg-red-100 rounded-lg text-red-800';
+                    responseEl.innerHTML = `<pre class="text-red-400 text-sm">${error}</pre>`;
+                }
+            } catch (error) {
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                responseTimeEl.textContent = `${responseTime} ms`;
+                statusEl.textContent = '网络错误';
+                statusEl.className = 'px-4 py-2 bg-red-100 rounded-lg text-red-800';
+                responseEl.innerHTML = `<pre class="text-red-400 text-sm">${error.message}</pre>`;
+            }
+        }
+        
+        function generateCode() {
+            const url = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('model').value;
+            const message = document.getElementById('message').value;
+            
+            // Generate cURL command
+            const curlCommand = `curl -X POST "${url}" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "${model}",
+    "messages": [
+      {
+        "role": "user",
+        "content": "${message}"
+      }
+    ]
+  }'`;
+            
+            // Generate Python code
+            const pythonCode = `import requests
+import json
+
+url = "${url}"
+headers = {
+    "Authorization": "Bearer ${apiKey}",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "model": "${model}",
+    "messages": [
+        {
+            "role": "user",
+            "content": "${message}"
+        }
+    ]
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.json())`;
+            
+            document.getElementById('curlCode').textContent = curlCommand;
+            document.getElementById('pythonCode').textContent = pythonCode;
+        }
+        
+        // Initialize with default values
+        document.addEventListener('DOMContentLoaded', function() {
+            generateCode();
+        });
+    </script>
+</body>
+</html>

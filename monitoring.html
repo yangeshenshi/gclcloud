@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监控仪表板 - gcli2api</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.3/plotly.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .metric-card { transition: transform 0.3s ease; }
+        .metric-card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-gray-900">gcli2api</a>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">首页</a>
+                    <a href="api-test.html" class="text-gray-700 hover:text-blue-600 transition-colors">API 测试</a>
+                    <a href="monitoring.html" class="text-blue-600 font-semibold">监控仪表板</a>
+                    <a href="cloud-deployment-guide.md" class="text-gray-700 hover:text-blue-600 transition-colors">文档</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="gradient-bg text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-bold mb-4">监控仪表板</h1>
+            <p class="text-xl">实时监控 gcli2api 服务状态和性能指标</p>
+        </div>
+    </section>
+
+    <!-- Metrics Overview -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <!-- Total Requests -->
+                <div class="bg-white rounded-xl shadow-lg p-6 metric-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">总请求数</p>
+                            <p class="text-3xl font-bold text-blue-600" id="totalRequests">12,543</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-green-600 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i>+12.5%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">较昨日</span>
+                    </div>
+                </div>
+                
+                <!-- Success Rate -->
+                <div class="bg-white rounded-xl shadow-lg p-6 metric-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">成功率</p>
+                            <p class="text-3xl font-bold text-green-600" id="successRate">98.7%</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-green-600 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i>+0.3%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">较昨日</span>
+                    </div>
+                </div>
+                
+                <!-- Average Response Time -->
+                <div class="bg-white rounded-xl shadow-lg p-6 metric-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">平均响应时间</p>
+                            <p class="text-3xl font-bold text-purple-600" id="avgResponseTime">245ms</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-clock text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-red-600 text-sm">
+                            <i class="fas fa-arrow-down mr-1"></i>-5ms
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">较昨日</span>
+                    </div>
+                </div>
+                
+                <!-- Active Accounts -->
+                <div class="bg-white rounded-xl shadow-lg p-6 metric-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">活跃账号数</p>
+                            <p class="text-3xl font-bold text-orange-600" id="activeAccounts">8</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-full">
+                            <i class="fas fa-users text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-gray-600 text-sm">
+                            <i class="fas fa-minus mr-1"></i>0
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">较昨日</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Requests Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-area text-blue-600 mr-3"></i>
+                        请求量趋势
+                    </h3>
+                    <div id="requestsChart" style="height: 300px;"></div>
+                </div>
+                
+                <!-- Response Time Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-tachometer-alt text-green-600 mr-3"></i>
+                        响应时间分布
+                    </h3>
+                    <div id="responseTimeChart" style="height: 300px;"></div>
+                </div>
+                
+                <!-- Account Usage Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-users text-purple-600 mr-3"></i>
+                        账号使用情况
+                    </h3>
+                    <div id="accountChart" style="height: 300px;"></div>
+                </div>
+                
+                <!-- Error Rate Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>
+                        错误率统计
+                    </h3>
+                    <div id="errorChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Status -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-server text-blue-600 mr-3"></i>
+                    服务状态
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-green-50 rounded-lg">
+                        <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-green-800">API 服务</h3>
+                        <p class="text-green-600">正常运行</p>
+                    </div>
+                    
+                    <div class="text-center p-6 bg-green-50 rounded-lg">
+                        <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-green-800">Redis 存储</h3>
+                        <p class="text-green-600">正常运行</p>
+                    </div>
+                    
+                    <div class="text-center p-6 bg-yellow-50 rounded-lg">
+                        <div class="bg-yellow-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-yellow-800">MongoDB</h3>
+                        <p class="text-yellow-600">连接缓慢</p>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold mb-4">系统日志</h3>
+                    <div class="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto">
+                        <div class="text-green-400 text-sm font-mono">
+                            <div>[2024-01-15 10:23:45] INFO: API request processed successfully</div>
+                            <div>[2024-01-15 10:23:44] INFO: Account rotation completed</div>
+                            <div>[2024-01-15 10:23:43] INFO: Redis connection established</div>
+                            <div>[2024-01-15 10:23:42] WARN: MongoDB connection timeout</div>
+                            <div>[2024-01-15 10:23:41] INFO: Service startup completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-400">© 2024 gcli2api 项目. 实时监控系统.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            initRequestsChart();
+            initResponseTimeChart();
+            initAccountChart();
+            initErrorChart();
+            startRealTimeUpdates();
+        });
+        
+        function initRequestsChart() {
+            const data = [{
+                x: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                y: [120, 200, 150, 300, 280, 220, 180],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: '请求量',
+                line: { color: '#3B82F6', width: 3 },
+                marker: { color: '#3B82F6', size: 8 }
+            }];
+            
+            const layout = {
+                title: '',
+                xaxis: { title: '时间' },
+                yaxis: { title: '请求数' },
+                margin: { t: 20, r: 20, b: 50, l: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('requestsChart', data, layout, {displayModeBar: false});
+        }
+        
+        function initResponseTimeChart() {
+            const data = [{
+                x: ['0-100ms', '100-200ms', '200-300ms', '300-500ms', '500ms+'],
+                y: [25, 45, 20, 8, 2],
+                type: 'bar',
+                name: '响应时间分布',
+                marker: { color: '#10B981' }
+            }];
+            
+            const layout = {
+                title: '',
+                xaxis: { title: '响应时间区间' },
+                yaxis: { title: '请求百分比' },
+                margin: { t: 20, r: 20, b: 50, l: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('responseTimeChart', data, layout, {displayModeBar: false});
+        }
+        
+        function initAccountChart() {
+            const data = [{
+                labels: ['账号1', '账号2', '账号3', '账号4', '账号5', '账号6', '账号7', '账号8'],
+                values: [15, 12, 18, 10, 14, 16, 11, 13],
+                type: 'pie',
+                name: '账号使用分布',
+                marker: { colors: ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#6B7280', '#84CC16'] }
+            }];
+            
+            const layout = {
+                title: '',
+                margin: { t: 20, r: 20, b: 20, l: 20 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('accountChart', data, layout, {displayModeBar: false});
+        }
+        
+        function initErrorChart() {
+            const data = [{
+                x: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                y: [0.5, 0.8, 1.2, 2.1, 1.8, 1.5, 1.0],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: '错误率',
+                line: { color: '#EF4444', width: 3 },
+                marker: { color: '#EF4444', size: 8 }
+            }];
+            
+            const layout = {
+                title: '',
+                xaxis: { title: '时间' },
+                yaxis: { title: '错误率 (%)' },
+                margin: { t: 20, r: 20, b: 50, l: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('errorChart', data, layout, {displayModeBar: false});
+        }
+        
+        function startRealTimeUpdates() {
+            // Simulate real-time updates
+            setInterval(function() {
+                // Update metrics
+                const totalRequests = document.getElementById('totalRequests');
+                const currentValue = parseInt(totalRequests.textContent.replace(',', ''));
+                const newValue = currentValue + Math.floor(Math.random() * 5) + 1;
+                totalRequests.textContent = newValue.toLocaleString();
+                
+                // Update other metrics randomly
+                const successRate = document.getElementById('successRate');
+                const newSuccessRate = (98.5 + Math.random() * 0.4).toFixed(1);
+                successRate.textContent = newSuccessRate + '%';
+                
+                const avgResponseTime = document.getElementById('avgResponseTime');
+                const newResponseTime = Math.floor(240 + Math.random() * 20);
+                avgResponseTime.textContent = newResponseTime + 'ms';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

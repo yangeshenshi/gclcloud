@@ -1,0 +1,60 @@
+{
+  "name": "gcli2api-web",
+  "version": "1.0.0",
+  "description": "Web interface for gcli2api - Gemini CLI to API converter",
+  "exports": {
+    ".": "./main.ts"
+  },
+  "imports": {
+    "$fresh/": "https://deno.land/x/fresh@1.6.3/",
+    "preact": "https://esm.sh/preact@10.19.6",
+    "preact/": "https://esm.sh/preact@10.19.6/",
+    "preact-render-to-string": "https://esm.sh/*preact-render-to-string@6.2.2",
+    "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",
+    "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.5.1",
+    "twind": "https://esm.sh/twind@0.16.19",
+    "twind/": "https://esm.sh/twind@0.16.19/",
+    "$std/": "https://deno.land/std@0.216.0/"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window", "dom", "dom.iterable", "dom.asynciterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "types": ["@types/preact", "@types/node"]
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    },
+    "exclude": ["_fresh"]
+  },
+  "fmt": {
+    "exclude": ["_fresh"],
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "test": {
+    "exclude": ["_fresh", "static"],
+    "files": {
+      "include": ["**/*.test.ts", "**/*.test.tsx"]
+    }
+  },
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx",
+    "cli": "echo 'import \"$fresh/src/dev/cli.ts\"' | deno run --unstable -A -",
+    "manifest": "deno task cli manifest $(pwd)",
+    "start": "deno run -A --watch=static/,routes/ dev.ts",
+    "build": "deno run -A dev.ts build",
+    "preview": "deno run -A main.ts",
+    "update": "deno run -A -r https://fresh.deno.dev/update .",
+    "test": "deno test --allow-all"
+  },
+  "nodeModulesDir": false
+}
